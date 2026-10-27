@@ -22,7 +22,7 @@ import pandas as pd
 from folium.plugins import HeatMap
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CSV = ROOT / "data" / "sample_temperature.csv"
+DEFAULT_CSV = ROOT / "data" / "alles_kid_temp.csv"
 DEFAULT_EXPORT = ROOT / "static" / "maps" / "heatmap.html"
 
 HEILBRONN_CENTER = (49.1427, 9.2109)
@@ -48,6 +48,12 @@ ALIASES = {
 # Cool (blue) to hot (red). Same colours are used in the legend.
 TEMP_COLORS = ["#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"]
 
+# Times are shown in Heilbronn local time.
+LOCAL_TZ = "Europe/Berlin"
+
+# The "All measurements" layer draws at most this many dots (keeps the page fast).
+MAX_RAW_POINTS = 4000
+
 # Size of one grid cell for averaging (about 110 m north-south, 80 m east-west).
 GRID_DEG = 0.001
 
@@ -62,7 +68,7 @@ def load_temperature_data(path: str | Path = DEFAULT_CSV) -> pd.DataFrame:
         raise ValueError(f"{path}: missing column(s) {missing}. Expected {COLUMNS}.")
 
     df = df[COLUMNS].copy()
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df["timestamp"] = _parse_timestamps(df["timestamp"])
     for col in ("latitude", "longitude", "temperature_c"):
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -71,6 +77,16 @@ def load_temperature_data(path: str | Path = DEFAULT_CSV) -> pd.DataFrame:
     df = df[df["latitude"].between(-90, 90) & df["longitude"].between(-180, 180)]
     df = df[df["temperature_c"].between(-40, 60)]
     return df.sort_values("timestamp").reset_index(drop=True)
+
+
+def _parse_timestamps(values: pd.Series) -> pd.Series:
+    """Parse ISO timestamps. UTC times (ending in "Z") become Heilbronn local time."""
+    ts = pd.to_datetime(values, format="ISO8601", errors="coerce", utc=True)
+    has_tz = values.astype(str).str.contains(r"(?:Z|[+-]\d{2}:?\d{2})$", regex=True)
+    if has_tz.all():
+        return ts.dt.tz_convert(LOCAL_TZ).dt.tz_localize(None)
+    # No time zone in the file: treat the times as local already.
+    return pd.to_datetime(values, format="ISO8601", errors="coerce")
 
 
 def filter_by_time(df: pd.DataFrame, start=None, end=None) -> pd.DataFrame:
@@ -165,9 +181,12 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
         ).add_to(cell_layer)
     cell_layer.add_to(m)
 
-    # Layer 3 (hidden by default): every single measurement
-    raw_layer = folium.FeatureGroup(name="All measurements", show=show_raw_points)
-    for r in df.itertuples():
+    # Layer 3 (hidden by default): single measurements, thinned out evenly
+    step = max(1, len(df) // MAX_RAW_POINTS)
+    raw = df.iloc[::step]
+    raw_name = "All measurements" if step == 1 else f"Single measurements (every {step}th)"
+    raw_layer = folium.FeatureGroup(name=raw_name, show=show_raw_points)
+    for r in raw.itertuples():
         folium.CircleMarker(
             location=[r.latitude, r.longitude],
             radius=2,

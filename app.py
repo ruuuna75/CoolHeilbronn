@@ -2,8 +2,8 @@
 
 Run:  python app.py   then open http://127.0.0.1:5000
 
-To use real data instead of the sample, either replace
-data/sample_temperature.csv or start with:
+Uses data/alles_kid_temp.csv (real senseBox:bike data) if present,
+otherwise the invented sample. To use another file:
     DATA_CSV=data/your_file.csv python app.py
 """
 
@@ -16,7 +16,9 @@ from flask import Flask, Response, render_template, request
 from viz.heatmap import filter_by_time, heatmap_html, load_temperature_data, summary_stats
 
 ROOT = Path(__file__).resolve().parent
-DATA_CSV = Path(os.environ.get("DATA_CSV", ROOT / "data" / "sample_temperature.csv"))
+REAL_CSV = ROOT / "data" / "alles_kid_temp.csv"      # senseBox:bike raw data
+SAMPLE_CSV = ROOT / "data" / "sample_temperature.csv"  # invented Day 1 sample
+DATA_CSV = Path(os.environ.get("DATA_CSV", REAL_CSV if REAL_CSV.exists() else SAMPLE_CSV))
 
 app = Flask(__name__)
 
@@ -67,16 +69,22 @@ def heatmap_page():
     )
 
 
-@app.route("/map/view")
-def heatmap_view():
-    """The Folium map itself. Embedded on /map with an <iframe>."""
-    df = get_data()
-    start, end = time_range_from_request()
+@lru_cache(maxsize=32)
+def _map_html(path: str, mtime: float, start: str, end: str) -> str:
+    df = _load(path, mtime)
     try:
         df = filter_by_time(df, start, end)
     except (ValueError, TypeError):
         pass
-    return Response(heatmap_html(df), mimetype="text/html")
+    return heatmap_html(df)
+
+
+@app.route("/map/view")
+def heatmap_view():
+    """The Folium map itself. Embedded on /map with an <iframe>."""
+    start, end = time_range_from_request()
+    html = _map_html(str(DATA_CSV), DATA_CSV.stat().st_mtime, start, end)
+    return Response(html, mimetype="text/html")
 
 
 @app.route("/analysis")

@@ -40,18 +40,27 @@ All datasets are converted to one CSV with these columns:
 All other columns are dropped when the CSV is loaded (`COLUMNS` in `viz/heatmap.py`).
 Common alternative names (`lat`, `lon`, `temp`, `temperature`, …) are renamed automatically.
 
-`data/sample_temperature.csv` contains **invented sample data** for Day 1
-(made by `scripts/make_sample_data.py`). Replace it with the cleaned real data:
+### Data files
+
+| File | Content |
+| --- | --- |
+| `data/alles_kid_temp.csv` | **Real** senseBox:bike raw data, 61,546 readings, 1–3 Sept 2026 (about 11:40–14:20 local time). Used by default. |
+| `data/sample_temperature.csv` | **Invented** Day 1 sample (`scripts/make_sample_data.py`). Used only if the real file is missing. |
+
+The raw file has the columns `timestamp, latitude, longitude, temperature, humidity, gps_speed, recording`.
+Only the first four are used; `temperature` is renamed to `temperature_c` on load.
+Timestamps in UTC (ending in `Z`) are converted to Heilbronn local time (Europe/Berlin).
+
+To use another file:
 
 ```bash
-# either overwrite data/sample_temperature.csv, or:
-DATA_CSV=data/real_temperature.csv python app.py
+DATA_CSV=data/other_file.csv python app.py
 ```
 
 ## How the map works
 
-- Measurements are averaged per small area (about 100 m × 100 m), so a street with
-  many bike measurements does not look hotter just because it has more points.
+- Measurements are averaged per small area (about 100 m × 100 m), so a place where
+  the bike stood still or passed many times does not look hotter just because it has more points.
 - Colours go from blue (cool) to red (hot); the °C legend is in the top right.
 - Layers (toggle top right): smooth **Heatmap**, **Average per area** (click a dot for
   average / min / max / number of measurements / time range), and **All measurements**.
@@ -83,7 +92,9 @@ Interface between visualization and web:
 
 ## Next steps (Day 2)
 
-- [ ] Replace sample CSV with the cleaned real data (Summerschool Heat Islands, senseBox:bike, senseBox:home)
+- [x] Raw senseBox:bike data on the map
+- [ ] Add the other datasets (Summerschool Heat Islands, senseBox:home) once cleaned
+- [ ] Rides were on different days: compare areas within the same time window (use the time filter), or correct for the daily temperature level
 - [ ] Check measurement locations and temperature values on the map
 - [ ] Mark top hotspots with names; tune colour scale and legend
 - [ ] Analysis page: hotspot list, charts (`viz/charts.py`), findings text
