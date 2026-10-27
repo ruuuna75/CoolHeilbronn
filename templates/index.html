@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Where does Heilbronn heat up?</h1>
+  <p class="lead">
+    We map temperature measurements across Heilbronn to find urban heat hotspots,
+    understand why they form, and propose targeted ways to cool the city down.
+  </p>
+  <a class="button" href="{{ url_for('heatmap_page') }}">Open the heatmap</a>
+</section>
+
+<section>
+  <h2>Data at a glance</h2>
+  {% include "_stats.html" %}
+  <p class="muted small">Data file: <code>{{ data_file }}</code>{% if 'sample' in data_file %} — sample data, will be replaced with real measurements{% endif %}.</p>
+</section>
+
+<section class="cards">
+  <a class="card" href="{{ url_for('heatmap_page') }}">
+    <h3>Heatmap</h3>
+    <p>Interactive map of measured temperatures, colour-coded from cool (blue) to hot (red).</p>
+  </a>
+  <a class="card" href="{{ url_for('analysis') }}">
+    <h3>Data Analysis</h3>
+    <p>Hotspots, temperature differences between areas, and their likely causes.</p>
+  </a>
+  <a class="card" href="{{ url_for('solutions') }}">
+    <h3>Proposed Solutions</h3>
+    <p>Green spaces, shade, fountains and misting systems where they are needed most.</p>
+  </a>
+</section>
+
+<section>
+  <h2>Datasets</h2>
+  <ul>
+    <li>Summerschool Heat Islands</li>
+    <li>senseBox:bike</li>
+    <li>senseBox:home</li>
+  </ul>
+</section>
+{% endblock %}
