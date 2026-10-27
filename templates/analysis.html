@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Data Analysis{% endblock %}
+{% block content %}
+<h1>Data Analysis</h1>
+<p class="lead">What the data tells us about heat in Heilbronn.</p>
+
+<section>
+  <h2>Overview</h2>
+  {% include "_stats.html" %}
+</section>
+
+<section>
+  <h2>Hotspots</h2>
+  <div class="placeholder">
+    Day 2: list of the hottest areas from the Data Analysis team (place, average °C, difference to the city average).
+  </div>
+</section>
+
+<section>
+  <h2>Charts</h2>
+  <div class="grid-2">
+    <div class="placeholder">Day 2: average temperature per hotspot</div>
+    <div class="placeholder">Day 2: temperature over the day</div>
+  </div>
+</section>
+
+<section>
+  <h2>Possible causes</h2>
+  <div class="placeholder">
+    Day 2: findings on vegetation, buildings and sealed surfaces.
+  </div>
+</section>
+{% endblock %}

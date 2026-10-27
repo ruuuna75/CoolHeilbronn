@@ -1,0 +1,12 @@
+{# Key numbers row. Expects `stats` from viz.heatmap.summary_stats #}
+{% if stats.count %}
+<div class="stats">
+  <div class="stat"><span class="stat-value">{{ stats.mean }} °C</span><span class="stat-label">Average</span></div>
+  <div class="stat"><span class="stat-value hot">{{ stats.max }} °C</span><span class="stat-label">Highest</span></div>
+  <div class="stat"><span class="stat-value cool">{{ stats.min }} °C</span><span class="stat-label">Lowest</span></div>
+  <div class="stat"><span class="stat-value">{{ "{:,}".format(stats.count) }}</span><span class="stat-label">Measurements</span></div>
+</div>
+<p class="muted small">Time range: {{ stats.start.strftime('%d.%m.%Y %H:%M') }} – {{ stats.end.strftime('%d.%m.%Y %H:%M') }}</p>
+{% else %}
+<p class="notice">No measurements for this selection.</p>
+{% endif %}

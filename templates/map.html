@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Heatmap{% endblock %}
+{% block content %}
+<h1>Heatmap</h1>
+<p class="lead">Measured temperatures in Heilbronn. Red areas are hotter, blue areas are cooler.
+Click a dot to see the average, minimum and maximum temperature for that area.</p>
+
+<form class="filter" method="get" action="{{ url_for('heatmap_page') }}">
+  <label>From
+    <input type="datetime-local" name="start" value="{{ start }}"
+           {% if min_time %}min="{{ min_time.strftime('%Y-%m-%dT%H:%M') }}" max="{{ max_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
+  </label>
+  <label>To
+    <input type="datetime-local" name="end" value="{{ end }}"
+           {% if min_time %}min="{{ min_time.strftime('%Y-%m-%dT%H:%M') }}" max="{{ max_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
+  </label>
+  <button type="submit" class="button">Apply</button>
+  {% if start or end %}<a href="{{ url_for('heatmap_page') }}">Reset</a>{% endif %}
+</form>
+{% if error %}<p class="notice">{{ error }}</p>{% endif %}
+
+<div class="map-frame">
+  <iframe src="{{ url_for('heatmap_view', start=start or None, end=end or None) }}"
+          title="Temperature map of Heilbronn" loading="lazy"></iframe>
+</div>
+
+{% include "_stats.html" %}
+
+<p class="muted small">
+  The map uses only time, location and temperature. Measurements are averaged per area
+  (about 100 m × 100 m) so that places with many readings do not look hotter just because
+  they have more points. Use the layer box (top right) to show every single measurement.
+</p>
+{% endblock %}

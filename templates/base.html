@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cool Heilbronn{% endblock %} · Urban Heat Map</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ url_for('home') }}">Cool Heilbronn</a>
+      <nav class="nav">
+        <a href="{{ url_for('home') }}" class="{{ 'active' if active == 'home' }}">Home</a>
+        <a href="{{ url_for('heatmap_page') }}" class="{{ 'active' if active == 'map' }}">Heatmap</a>
+        <a href="{{ url_for('analysis') }}" class="{{ 'active' if active == 'analysis' }}">Data Analysis</a>
+        <a href="{{ url_for('solutions') }}" class="{{ 'active' if active == 'solutions' }}">Proposed Solutions</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      Green City Hackathon 2026 · Green Capital Heilbronn · Climate Change – Mitigation
+    </div>
+  </footer>
+</body>
+</html>
