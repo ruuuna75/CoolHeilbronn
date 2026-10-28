@@ -89,3 +89,10 @@ scripts/                Helper scripts (sample data generator)
 
 Interface between visualization and web:
 `load_temperature_data()` → `filter_by_time()` → `heatmap_html(df)` / `summary_stats(df)`.
+
+
+Requirements
+
+flask>=3.0
+folium>=0.17
+pandas>=2.0
