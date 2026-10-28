@@ -89,13 +89,3 @@ scripts/                Helper scripts (sample data generator)
 
 Interface between visualization and web:
 `load_temperature_data()` → `filter_by_time()` → `heatmap_html(df)` / `summary_stats(df)`.
-
-## Next steps (Day 2)
-
-- [x] Raw senseBox:bike data on the map
-- [ ] Add the other datasets (Summerschool Heat Islands, senseBox:home) once cleaned
-- [ ] Rides were on different days: compare areas within the same time window (use the time filter), or correct for the daily temperature level
-- [ ] Check measurement locations and temperature values on the map
-- [ ] Mark top hotspots with names; tune colour scale and legend
-- [ ] Analysis page: hotspot list, charts (`viz/charts.py`), findings text
-- [ ] Solutions page: one card per solution with what / where / why
