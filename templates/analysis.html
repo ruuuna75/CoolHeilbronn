@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Data Analysis{% endblock %}
 {% block content %}
+
 <h1>Data Analysis</h1>
 <p class="lead">What the data tells us about heat in Heilbronn.</p>
 
@@ -12,7 +13,8 @@
 <section>
   <h2>Hotspots</h2>
   <div class="placeholder">
-    Day 2: list of the hottest areas from the Data Analysis team (place, average °C, difference to the city average).
+    Day 2: list of the hottest areas from the Data Analysis team
+    (place, average °C, difference to the city average).
   </div>
 </section>
 
@@ -24,10 +26,91 @@
   </div>
 </section>
 
-<section>
-  <h2>Possible causes</h2>
-  <div class="placeholder">
-    Day 2: findings on vegetation, buildings and sealed surfaces.
+
+<section class="causes-section">
+  <h2>Possible Causes</h2>
+
+  <div class="causes-list">
+
+    <!-- Cause 1: image on the right -->
+    <article class="cause-card">
+      <div class="cause-text">
+        <h3>1. Industrial Areas and Sealed Surfaces</h3>
+        <p>
+          Industrial areas and sealed surfaces store heat during the day
+          and release it in the evening (Oke, 1982). The city’s climate
+          analysis also classifies them as heat-burden zones.
+        </p>
+      </div>
+      <img
+        class="cause-image"
+        src="{{ url_for('static', filename='images/industrial-heat.jpeg') }}"
+        alt="Industrial buildings and sealed surfaces at sunset"
+        loading="lazy"
+      >
+    </article>
+
+    <!-- Cause 2: image on the left -->
+    <article class="cause-card">
+      <img
+        class="cause-image"
+        src="{{ url_for('static', filename='images/open-land.jpeg') }}"
+        alt="Open green countryside cooling after sunset"
+        loading="lazy"
+      >
+      <div class="cause-text">
+        <h3>2. Limited Cooling from Open Land</h3>
+        <p>
+          Open land cools quickly after sunset. Cold air does not reach
+          deep into the city, so the cooling effect is mainly visible
+          beyond about 3 km from the centre.
+        </p>
+      </div>
+    </article>
+
+    <!-- Cause 3: image on the right -->
+    <article class="cause-card">
+      <div class="cause-text">
+        <h3>3. Limited Tree Canopy Coverage</h3>
+        <p>
+          Trees shade the ground and release moisture from their leaves
+          (Bowler et al., 2010). Cooling becomes stronger at canopy
+          coverage levels above about 40% (Ziter et al., 2019).
+          Only 10 of the 1,045 cells had more than 25% cover.
+        </p>
+      </div>
+      <img
+        class="cause-image"
+        src="{{ url_for('static', filename='images/tree-canopy.jpeg') }}"
+        alt="Street trees providing shade along an urban pedestrian path"
+        loading="lazy"
+      >
+    </article>
+
+    <!-- Cause 4: image on the left -->
+    <article class="cause-card">
+      <img
+        class="cause-image"
+        src="{{ url_for('static', filename='images/inner-city.jpeg') }}"
+        alt="Tree-lined inner-city street in afternoon sunlight"
+        loading="lazy"
+      >
+      <div class="cause-text">
+        <h3>4. Limitations of Inner-City Measurements</h3>
+        <p>
+          The inner city is not the hottest zone. It has the most street
+          trees, with about 10% cover, and the bike data stops at 23:00
+          local time, before the heat island is usually at its strongest.
+        </p>
+      </div>
+    </article>
+
   </div>
 </section>
+
+<p class="image-attribution">
+  Images generated using OpenAI's AI image generation model.
+</p>
+
+
 {% endblock %}
