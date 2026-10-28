@@ -224,7 +224,7 @@ p {
 }
 
 /* AI-generated image attribution */
-.image-attribution {
+.left-bottom {
   margin-top: 20px;
   color: var(--muted);
   font-size: 0.85rem;

@@ -2,8 +2,6 @@
 {% block title %}Heatmap{% endblock %}
 {% block content %}
 <h1>Heatmap</h1>
-<p class="lead">Measured temperatures in Heilbronn. Red areas are hotter, blue areas are cooler.
-Click a dot to see the average, minimum and maximum temperature for that area.</p>
 
 <form class="filter" method="get" action="{{ url_for('heatmap_page') }}">
   <label>From
@@ -26,9 +24,4 @@ Click a dot to see the average, minimum and maximum temperature for that area.</
 
 {% include "_stats.html" %}
 
-<p class="muted small">
-  The map uses only time, location and temperature. Measurements are averaged per area
-  (about 100 m × 100 m) so that places with many readings do not look hotter just because
-  they have more points. Use the layer box (top right) to show every single measurement.
-</p>
 {% endblock %}

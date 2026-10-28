@@ -6,7 +6,7 @@
   <div class="stat"><span class="stat-value cool">{{ stats.min }} °C</span><span class="stat-label">Lowest</span></div>
   <div class="stat"><span class="stat-value">{{ "{:,}".format(stats.count) }}</span><span class="stat-label">Measurements</span></div>
 </div>
-<p class="muted small">Time range: {{ stats.start.strftime('%d.%m.%Y %H:%M') }} – {{ stats.end.strftime('%d.%m.%Y %H:%M') }}</p>
+<p class="left-bottom">Time range: {{ stats.start.strftime('%d.%m.%Y %H:%M') }} – {{ stats.end.strftime('%d.%m.%Y %H:%M') }}</p>
 {% else %}
 <p class="notice">No measurements for this selection.</p>
 {% endif %}
