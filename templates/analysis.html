@@ -18,14 +18,76 @@
   </div>
 </section>
 
-<section>
+<section class="charts-section">
   <h2>Charts</h2>
-  <div class="grid-2">
-    <div class="placeholder">Day 2: average temperature per hotspot</div>
-    <div class="placeholder">Day 2: temperature over the day</div>
-  </div>
+
+  {% if charts %}
+    <div class="charts-grid">
+      {% for chart in charts %}
+        <div class="chart-card">
+          <button
+            type="button"
+            class="chart-open"
+            aria-label="Enlarge chart"
+          >
+            <img
+              src="{{ url_for('static', filename='charts/' ~ chart) }}"
+              alt="Temperature analysis chart"
+              loading="lazy"
+            >
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No charts are available yet.</p>
+  {% endif %}
 </section>
 
+<!-- Enlarged chart popup -->
+<dialog id="chart-modal" class="chart-modal" aria-label="Enlarged chart">
+  <button
+    type="button"
+    class="chart-modal-close"
+    aria-label="Close enlarged chart"
+  >&times;</button>
+
+  <img id="chart-modal-image" src="" alt="Enlarged temperature analysis chart">
+</dialog>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("chart-modal");
+    const modalImage = document.getElementById("chart-modal-image");
+    const closeButton = modal.querySelector(".chart-modal-close");
+
+    document.querySelectorAll(".chart-open").forEach((button) => {
+      button.addEventListener("click", () => {
+        const chart = button.querySelector("img");
+
+        modalImage.src = chart.src;
+        modalImage.alt = chart.alt;
+        modal.showModal();
+      });
+    });
+
+    closeButton.addEventListener("click", () => {
+      modal.close();
+    });
+
+    // Close when clicking the dark background outside the chart.
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        modal.close();
+      }
+    });
+
+    // The native dialog also closes with Escape.
+    modal.addEventListener("close", () => {
+      modalImage.src = "";
+    });
+  });
+</script>
 
 <section class="causes-section">
   <h2>Possible Causes</h2>

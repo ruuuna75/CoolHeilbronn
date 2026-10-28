@@ -89,8 +89,22 @@ def heatmap_view():
 
 @app.route("/analysis")
 def analysis():
-    return render_template("analysis.html", active="analysis", stats=summary_stats(get_data()))
+    charts_dir = Path(app.static_folder) / "charts"
 
+    supported_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+
+    charts = sorted(
+        file.name
+        for file in charts_dir.iterdir()
+        if file.is_file() and file.suffix.lower() in supported_extensions
+    ) if charts_dir.is_dir() else []
+
+    return render_template(
+        "analysis.html",
+        active="analysis",
+        stats=summary_stats(get_data()),
+        charts=charts,
+    )
 
 @app.route("/solutions")
 def solutions():
