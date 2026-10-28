@@ -37,9 +37,17 @@ import pandas as pd
 from folium.plugins import HeatMap
 
 ROOT = Path(__file__).resolve().parent.parent
+def _pick(*names: str) -> Path:
+    """First file that exists in data/ (so both the cleaned and original names work)."""
+    for n in names:
+        if (ROOT / "data" / n).exists():
+            return ROOT / "data" / n
+    return ROOT / "data" / names[0]
+
+
 DEFAULT_CSVS = [
-    ROOT / "data" / "alles_kid_temp_clean.csv",
-    ROOT / "data" / "OSEM_Bike_Data_cleaned.csv",
+    _pick("alles_kid_temp_clean.csv", "alles_kid_temp.csv"),
+    _pick("OSEM_Bike_Data_cleaned.csv"),
 ]
 DEFAULT_EXPORT = ROOT / "static" / "maps" / "heatmap.html"
 
@@ -73,14 +81,14 @@ LOCAL_TZ = "Europe/Berlin"
 
 RIDE_GAP = pd.Timedelta("30min")     # a longer gap starts a new ride
 LONG_RIDE = pd.Timedelta("30min")    # longer rides get the time-trend correction
-MIN_RIDE_POINTS = 30                 # shorter rides are too small to compare
+MIN_RIDE_POINTS = 1                  # keep every measurement
 
 # Diverging colours: cooler than surroundings (blue) → hotter (red)
 DELTA_COLORS = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"]
 
 MAX_RAW_POINTS = 4000
 GRID_DEG = 0.001          # ~110 m × 75 m grid cell
-MIN_CELL_POINTS = 3       # cells with fewer measurements are not shown
+MIN_CELL_POINTS = 1       # every measurement appears on the map
 
 
 # ───────────────────────────── loading ─────────────────────────────
@@ -113,7 +121,9 @@ def _read_one(path: str | Path) -> pd.DataFrame:
     if "humidity" not in df.columns:
         df["humidity"] = np.nan
 
-    df = df[COLUMNS].copy()
+    # Keep road-surface columns if the file has them (used by the DI map)
+    extra = [c for c in df.columns if c.startswith("surface ")]
+    df = df[COLUMNS + extra].copy()
     df["timestamp"] = _parse_timestamps(df["timestamp"])
     for col in ("latitude", "longitude", "temperature_c", "humidity"):
         df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -210,7 +220,7 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
     lim = max(round(lim * 2) / 2, 0.5)
 
     colormap = cm.LinearColormap(DELTA_COLORS, vmin=-lim, vmax=lim)
-    colormap.caption = "Temperature vs. surroundings at the same time (ΔT, °C)"
+    colormap.caption = "ΔT: temperature vs. ride baseline (°C)"
 
     m = folium.Map(location=HEILBRONN_CENTER, zoom_start=14, tiles="OpenStreetMap", control_scale=True)
 
@@ -218,7 +228,7 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
     hot = cells[cells["delta_mean"] > 0]
     HeatMap(
         [[r.latitude, r.longitude, min(r.delta_mean / lim, 1.0)] for r in hot.itertuples()],
-        name="Hotspots (warmer than surroundings)",
+        name="Hotspots (ΔT > 0, warmer than ride baseline)",
         min_opacity=0.25,
         radius=22,
         blur=18,
@@ -230,7 +240,7 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
     for r in cells.itertuples():
         value = min(max(r.delta_mean, -lim), lim)
         popup = (
-            f"<b>{r.delta_mean:+.1f} °C</b> vs. surroundings<br>"
+            f"<b>{r.delta_mean:+.1f} °C</b> vs. ride baseline<br>"
             f"Measured average: {r.temp_mean:.1f} °C<br>"
             f"{r.count} measurement(s) from {r.rides} ride(s)<br>"
             f"{r.first:%d.%m.%Y %H:%M} – {r.last:%d.%m.%Y %H:%M}"
@@ -251,7 +261,7 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
     # Layer 3 (hidden): single measurements, thinned out evenly
     step = max(1, len(df) // MAX_RAW_POINTS)
     raw = df.iloc[::step]
-    raw_name = "All measurements" if step == 1 else f"Single measurements (every {step}th)"
+    raw_name = "All measurements" if step == 1 else f"Sample of single points (every {step}th, display only)"
     raw_layer = folium.FeatureGroup(name=raw_name, show=show_raw_points)
     for r in raw.itertuples():
         folium.CircleMarker(
@@ -266,10 +276,21 @@ def build_heatmap(df: pd.DataFrame, show_raw_points: bool = False) -> folium.Map
     raw_layer.add_to(m)
 
     colormap.add_to(m)
+    add_count_box(m, df, "ΔT = measured − expected temperature of the same ride at that moment")
     folium.LayerControl(collapsed=False).add_to(m)
     m.fit_bounds([[df["latitude"].min(), df["longitude"].min()],
                   [df["latitude"].max(), df["longitude"].max()]])
     return m
+
+
+def add_count_box(m: folium.Map, df: pd.DataFrame, note: str = "") -> None:
+    """Small box: how many measurements (per file) the map is based on."""
+    per_source = " · ".join(f"{k}: {v:,}" for k, v in df.groupby("source").size().items())
+    m.get_root().html.add_child(folium.Element(
+        '<div style="position:fixed;bottom:60px;right:10px;z-index:9999;background:#fff;'
+        'padding:6px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3);'
+        f'font:12px/1.4 sans-serif;max-width:320px"><b>{len(df):,} measurements</b><br>'
+        f'{per_source}<br><span style="color:#666">{note}</span></div>'))
 
 
 def heatmap_html(df: pd.DataFrame) -> str:

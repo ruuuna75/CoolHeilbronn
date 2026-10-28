@@ -45,7 +45,7 @@ DI_COLORS = ["#2b83ba", "#1a9641", "#a6d96a", "#ffffbf", "#fdae61", "#d7191c", "
 DI_STOPS = [60, 68, 73, 75, 78, 80, 90]
 
 GRID_DEG = 0.001
-MIN_CELL_POINTS = 3
+MIN_CELL_POINTS = 1
 MAX_SURFACE_POINTS = 1500     # per surface layer, keeps the page fast
 
 
@@ -61,22 +61,20 @@ def di_category(di: float) -> str:
     return "Comfortable"
 
 
-def load_di_data(path: str | Path = DEFAULT_CSV) -> pd.DataFrame:
-    df = pd.read_csv(path)
-    df = df.rename(columns={"createdAt": "timestamp", "Temperature": "temperature_c",
-                            "Rel. Humidity": "humidity"})
-    df["timestamp"] = (pd.to_datetime(df["timestamp"], format="ISO8601", errors="coerce", utc=True)
-                         .dt.tz_convert("Europe/Berlin").dt.tz_localize(None))
-    for col in ("latitude", "longitude", "temperature_c", "humidity"):
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=["latitude", "longitude", "temperature_c", "humidity"])
+def load_di_data(paths=None) -> pd.DataFrame:
+    """Load exactly the same measurements as the temperature map, then add DI.
 
-    lat0, lat1 = HEILBRONN_BOUNDS["lat"]
-    lon0, lon1 = HEILBRONN_BOUNDS["lon"]
-    df = df[df["latitude"].between(lat0, lat1) & df["longitude"].between(lon0, lon1)].copy()
+    Using the same loader (same files, same Heilbronn filter, same ride filter)
+    means both maps put their dots in exactly the same places.
+    """
+    from viz.heatmap import DEFAULT_CSVS, load_temperature_data
 
+    df = load_temperature_data(paths or DEFAULT_CSVS)
+    df = df.dropna(subset=["humidity"]).copy()
     df["di"] = discomfort_index(df["temperature_c"], df["humidity"])
 
+    # Surface columns arrive lower-case from the shared loader
+    df = df.rename(columns={c.lower(): c for c in SURFACE_COLUMNS})
     surfaces = [c for c in SURFACE_COLUMNS if c in df.columns]
     if surfaces:
         # Dominant surface = the surface column with the highest value
@@ -119,7 +117,7 @@ def build_di_map(df: pd.DataFrame) -> folium.Map:
         [[r.latitude, r.longitude, float(np.clip((r.di - 75) / 10, 0.05, 1))]
          for r in uncomfortable.itertuples()],
         name="DI heatmap (uncomfortable areas, DI ≥ 75)",
-        min_opacity=0.25, radius=22, blur=18,
+        min_opacity=0.25, radius=10, blur=8,
         gradient={0.2: "#ffffbf", 0.45: "#fdae61", 0.7: "#d7191c", 1.0: "#7b3294"},
     ).add_to(m)
 
@@ -164,6 +162,8 @@ def build_di_map(df: pd.DataFrame) -> folium.Map:
             layer.add_to(m)
 
     colormap.add_to(m)
+    from viz.heatmap import add_count_box
+    add_count_box(m, df, "DI = 0.81·T + 0.01·RH·(0.99·T − 14.3) + 46.3")
     m.get_root().html.add_child(folium.Element(
         '<div style="position:fixed;bottom:60px;left:10px;z-index:9999;background:#fff;'
         'padding:8px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3);'
