@@ -2,6 +2,20 @@
 {% block title %}Proposed Solutions{% endblock %}
 {% block content %}
 
+<!-- Discomfort Index Map -->
+<h2>Discomfort Index (DI) Map</h2>
+<p>
+  Explore heat discomfort levels across Heilbronn,
+  calculated from temperature and humidity measurements.
+</p>
+
+<iframe
+        src="{{ url_for('static', filename='maps/heat_index_map.html') }}"
+        title="Discomfort Index Map of Heilbronn"
+        style="width: 100%; height: 600px; border: none; border-radius: 12px;"
+        loading="lazy">
+</iframe>
+
 <h1>Proposed Solutions</h1>
 
 <p class="lead">

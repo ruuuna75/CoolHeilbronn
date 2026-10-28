@@ -2,9 +2,12 @@
 
 Run:  python app.py   then open http://127.0.0.1:5000
 
-Uses data/alles_kid_temp.csv (real senseBox:bike data) if present,
-otherwise the invented sample. To use another file:
-    DATA_CSV=data/your_file.csv python app.py
+Uses the real senseBox:bike CSVs in data/ (the same files as the DI map):
+    data/alles_kid_temp_clean.csv  (or alles_kid_temp.csv)
+    data/OSEM_Bike_Data_cleaned.csv
+If none of them exist, the invented sample is used.
+To use other file(s):
+    DATA_CSV=data/a.csv:data/b.csv python app.py       (separate files with ":")
 """
 
 import os
@@ -13,24 +16,46 @@ from pathlib import Path
 
 from flask import Flask, Response, render_template, request
 
-from viz.heatmap import filter_by_time, heatmap_html, load_temperature_data, summary_stats
+from viz.heatmap import (
+    DEFAULT_CSVS,
+    filter_by_time,
+    heatmap_html,
+    load_temperature_data,
+    summary_stats,
+)
 
 ROOT = Path(__file__).resolve().parent
-REAL_CSV = ROOT / "data" / "alles_kid_temp.csv"      # senseBox:bike raw data
 SAMPLE_CSV = ROOT / "data" / "sample_temperature.csv"  # invented Day 1 sample
-DATA_CSV = Path(os.environ.get("DATA_CSV", REAL_CSV if REAL_CSV.exists() else SAMPLE_CSV))
+
+
+def _pick_data_files() -> tuple[Path, ...]:
+    env = os.environ.get("DATA_CSV")
+    if env:
+        return tuple(Path(p) for p in env.split(os.pathsep) if p)
+    real = [p for p in DEFAULT_CSVS if p.exists()]
+    return tuple(real) if real else (SAMPLE_CSV,)
+
+
+DATA_FILES = _pick_data_files()
+DATA_LABEL = " + ".join(p.name for p in DATA_FILES)
 
 app = Flask(__name__)
 
 
+def _signature() -> tuple[tuple[str, ...], tuple[float, ...]]:
+    """File paths + modification times. A changed file means a new cache key."""
+    return (tuple(str(p) for p in DATA_FILES),
+            tuple(p.stat().st_mtime for p in DATA_FILES))
+
+
 @lru_cache(maxsize=4)
-def _load(path: str, mtime: float):
-    return load_temperature_data(path)
+def _load(paths: tuple, mtimes: tuple):
+    return load_temperature_data(paths)
 
 
 def get_data():
-    """Load the CSV once and reload it automatically when the file changes."""
-    return _load(str(DATA_CSV), DATA_CSV.stat().st_mtime)
+    """Load all CSVs once and reload automatically when a file changes."""
+    return _load(*_signature())
 
 
 def time_range_from_request():
@@ -41,7 +66,7 @@ def time_range_from_request():
 @app.route("/")
 def home():
     df = get_data()
-    return render_template("index.html", active="home", stats=summary_stats(df), data_file=DATA_CSV.name)
+    return render_template("index.html", active="home", stats=summary_stats(df), data_file=DATA_LABEL)
 
 
 @app.route("/map")
@@ -65,13 +90,13 @@ def heatmap_page():
         stats=summary_stats(selected),
         min_time=stats.get("start"),
         max_time=stats.get("end"),
-        data_file=DATA_CSV.name,
+        data_file=DATA_LABEL,
     )
 
 
 @lru_cache(maxsize=32)
-def _map_html(path: str, mtime: float, start: str, end: str) -> str:
-    df = _load(path, mtime)
+def _map_html(paths: tuple, mtimes: tuple, start: str, end: str) -> str:
+    df = _load(paths, mtimes)
     try:
         df = filter_by_time(df, start, end)
     except (ValueError, TypeError):
@@ -83,7 +108,7 @@ def _map_html(path: str, mtime: float, start: str, end: str) -> str:
 def heatmap_view():
     """The Folium map itself. Embedded on /map with an <iframe>."""
     start, end = time_range_from_request()
-    html = _map_html(str(DATA_CSV), DATA_CSV.stat().st_mtime, start, end)
+    html = _map_html(*_signature(), start, end)
     return Response(html, mimetype="text/html")
 
 
