@@ -1,6 +1,6 @@
 # Cool Heilbronn
 
-## Green City Hackathon Heilbronn 2026 · Team Apfelschorle 
+## Green City Hackathon Heilbronn 2026 · Team Applejuice
 
 Data Analysis: Amane Aoyama, Reina Takahashi, Ryuta Sasaki
 
