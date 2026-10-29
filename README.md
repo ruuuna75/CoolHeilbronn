@@ -6,8 +6,6 @@ A Flask website that shows where Heilbronn heats up: a temperature heatmap, a di
 (DI) map, the analysis of what explains the temperature differences, and proposed solutions
 against urban heat.
 
-![Map preview](docs/map_preview.png)
-
 ## Run it locally
 
 ```bash
